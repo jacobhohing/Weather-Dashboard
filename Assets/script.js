@@ -6,16 +6,75 @@ var theURL = 'https://cors-anywhere.herokuapp.com/api.openweathermap.org/data/2.
 var theMultiURL = 'https://cors-anywhere.herokuapp.com/api.openweathermap.org/data/2.5/onecall?';
 
 var dayCounter = 1;
+var searches = [];
+var searchCount = 0
+var refreshCheck = 0
+
+renderSearch()
+
+function renderSearch() {
+    
+    var searchList = document.querySelector("#prev-searches"); 
+    searchList.innerHTML = '';
+    
+    var storedSearches = JSON.parse(localStorage.getItem("searches"));
+    if (storedSearches !== null) {
+        
+        searches = storedSearches;
+
+        if (refreshCheck == 0)
+        {
+            var thePos = searches.length - 1
+            
+    
+            var theLast = searches[thePos]   
+            render(theLast);
+            refreshCheck = 1
+        }
 
 
+      }
+
+      for (var i = 0; i < searches.length; i++) {
+        var theSearch = searches[i];
+    
+        var li = document.createElement("li");
+        li.textContent = theSearch;
+        li.className = "list-group-item";
+        searchList.appendChild(li);
+
+      }
+  }
 
 $('#search-btn').click(function(){
+    var theType = 'Search'
+    refreshCheck = 1
+
+    render(theType);
+
+})
+
+$(document).on('click', 'li', function(){
+
+    refreshCheck = 1
     
-    var theCity = $("#search-bar").val();
+    var theType = $(this).text()
+    render(theType);
+})
+
+function render(type) {
+    
+    if (type == 'Search')
+    {
+        var theCity = $("#search-bar").val();
+    }
+    else
+    {
+        var theCity = type;
+    }
+
+    $('#UV').empty();
     var queryURL = theURL + theCity + theKey
-    
-    
-    console.log(queryURL)
 
     $.ajax({
         url: queryURL,
@@ -30,8 +89,15 @@ $('#search-btn').click(function(){
       }).then(function (Response) {
             
             
+            // var theSearchNumber = parseInt(searchCount) + 1
 
-            
+            if (type == 'Search')
+            {
+                searches.push(Response.name);
+                localStorage.setItem("searches", JSON.stringify(searches));
+                renderSearch()
+            }
+           
         
             var long = Response.coord.lon;
             var lat = Response.coord.lat;   
@@ -47,7 +113,6 @@ $('#search-btn').click(function(){
             var todayWeather = Response.weather[0].main
             var weatherIcon = $("<i>");
 
-            console.log(todayWeather)
 
             if (todayWeather == 'Snow')
             {
@@ -108,6 +173,8 @@ $('#search-btn').click(function(){
                
                 for(var i = 0;i < 5;i++)
                 {
+                    $('#day-' + dayCounter + '-weather').empty();
+
                     var theDay = moment().add(dayCounter, 'days').format('L');
                     
                     var weather = forecast.daily[i].weather[0].main;
@@ -115,9 +182,7 @@ $('#search-btn').click(function(){
                     var castTemp = forecast.daily[i].temp.day;
                     var castHumid = forecast.daily[i].humidity;
 
-                    var currentUV = forecast.daily[i].humidity;
-
-                    console.log(forecast)
+      
                    
 
                     if (weather == 'Snow')
@@ -132,7 +197,7 @@ $('#search-btn').click(function(){
                     {
                         weatherIcon.addClass("fas fa-cloud-rain")
                     }
-                    else if (weather == 'Clear')
+                    else
                     {
                         weatherIcon.addClass("fas fa-sun")
                     }
@@ -149,9 +214,11 @@ $('#search-btn').click(function(){
 
                     dayCounter++
                 }
+
+                dayCounter = 1
                 
             });
       });
 
 
-    });
+    };
